@@ -1,11 +1,6 @@
 ﻿var detector = new AnomalyDetectionService();
 
-CsvFeatureGenerator.Gerar(
-    caminhoEntrada: "Data/sensores.csv",
-    caminhoSaida: "Data/sensores_enriquecido.csv"
-);
-
-detector.Treinar("Data/sensores_enriquecido.csv");
+detector.CarregarModelo("ModelsML/modelo_tag.zip");
 
 var resultado = detector.PreverNovaLeitura(
     caminhoHistorico: "Data/sensores.csv",
@@ -13,18 +8,13 @@ var resultado = detector.PreverNovaLeitura(
     valor: 81.0f
 );
 
-Console.WriteLine("MODELO TAG INDIVIDUAL");
+Console.WriteLine("MODELO TAG INDIVIDUAL - CARREGADO DO ZIP");
 Console.WriteLine($"É anomalia? {resultado.EhAnomalia}");
 Console.WriteLine($"Score: {resultado.Score}");
 
-ProcessoFeatureGenerator.Gerar(
-    entrada: "Data/processo.csv",
-    saida: "Data/processo_enriquecido.csv"
-);
-
 var detectorProcesso = new MultitagAnomalyService();
 
-detectorProcesso.Treinar("Data/processo_enriquecido.csv");
+detectorProcesso.CarregarModelo("ModelsML/modelo_processo.zip");
 
 var novaLeituraProcesso = ProcessoFeatureGenerator.GerarFeaturesNovaLeitura(
     historicoCsv: "Data/processo.csv",
@@ -36,6 +26,6 @@ var novaLeituraProcesso = ProcessoFeatureGenerator.GerarFeaturesNovaLeitura(
 
 var resultadoProcesso = detectorProcesso.Prever(novaLeituraProcesso);
 
-Console.WriteLine("MODELO PROCESSO / MULTITAG");
+Console.WriteLine("MODELO PROCESSO / MULTITAG - CARREGADO DO ZIP");
 Console.WriteLine($"É anomalia? {resultadoProcesso.EhAnomalia}");
 Console.WriteLine($"Score: {resultadoProcesso.Score}");

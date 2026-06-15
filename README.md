@@ -1,71 +1,176 @@
-# EstudoML - Detecção de Anomalias em Tags Industriais
+# EstudoML - Detecção de Anomalias Industriais com ML.NET
 
 ## Objetivo
 
-Este projeto tem como objetivo estudar e implementar Machine Learning para detecção de anomalias em tags industriais.
+Este projeto tem como objetivo estudar e implementar Machine Learning para detecção de anomalias em ambientes industriais.
 
-A ideia é que o sistema aprenda o comportamento normal de uma tag (temperatura, pressão, corrente, vazão, etc.) através do histórico armazenado e consiga identificar comportamentos fora do padrão quando novas leituras forem recebidas.
+A solução foi dividida em dois tipos de análise:
+
+### Modelo de Tag Individual
+
+Analisa o comportamento de uma única tag ao longo do tempo.
+
+Exemplos:
+
+* Temperatura
+* Pressão
+* Corrente
+* Vazão
+* Nível
+
+O modelo aprende o comportamento normal da tag através do histórico e identifica possíveis desvios.
+
+---
+
+### Modelo de Processo (Multitag)
+
+Analisa várias tags simultaneamente.
+
+Exemplo:
+
+```text
+Temperatura
+Pressão
+Corrente
+```
+
+O objetivo é identificar comportamentos anormais no processo como um todo.
+
+Por exemplo:
+
+```text
+Temperatura ↑
+Pressão ↓
+Corrente ↑
+```
+
+Mesmo que cada variável isoladamente pareça normal, o conjunto pode indicar um problema operacional.
 
 ---
 
 # Estrutura do Projeto
 
-text
+```text
 EstudoML
 │
-├── Program.cs
+├── README.md
 │
 ├── Models
 │   ├── LeituraBruta.cs
 │   ├── SensorData.cs
-│   └── SensorPrediction.cs
+│   ├── SensorPrediction.cs
+│   └── ProcessoData.cs
 │
 ├── Services
 │   ├── CsvFeatureGenerator.cs
-│   └── AnomalyDetectionService.cs
+│   ├── ProcessoFeatureGenerator.cs
+│   ├── AnomalyDetectionService.cs
+│   └── MultitagAnomalyService.cs
 │
-└── Data
-    ├── sensores.csv
-    └── sensores_enriquecido.csv
-
-
----
-
-# Program.cs
-
-Arquivo principal da aplicação.
-
-Responsável por coordenar a execução do sistema.
-
-Fluxo executado:
-
-1. Gerar o CSV enriquecido
-2. Treinar o modelo de Machine Learning
-3. Simular uma nova leitura
-4. Executar a previsão
-5. Exibir o resultado
-
-
+├── Data
+│   ├── sensores.csv
+│   ├── sensores_enriquecido.csv
+│   ├── processo.csv
+│   └── processo_enriquecido.csv
+│
+└── Program.cs
+```
 
 ---
 
-# Pasta Models
+# Arquitetura da Solução
 
-Contém as classes utilizadas para representar os dados da aplicação.
+## Modelo de Tag Individual
+
+```text
+Sensor
+↓
+Histórico da Tag
+↓
+sensores.csv
+↓
+CsvFeatureGenerator
+↓
+sensores_enriquecido.csv
+↓
+ML.NET
+↓
+Detecção de Anomalia
+```
+
+---
+
+## Modelo de Processo (Multitag)
+
+```text
+Múltiplas Tags
+↓
+processo.csv
+↓
+ProcessoFeatureGenerator
+↓
+processo_enriquecido.csv
+↓
+ML.NET
+↓
+Detecção de Anomalia do Processo
+```
+
+---
+
+# Models
 
 ## LeituraBruta.cs
 
-Representa os dados originais recebidos da tag.
+Representa uma leitura simples de uma tag.
+
+Exemplo:
+
+```csv
+Date;Valor
+12/06/2026 13:47;65.0
+```
 
 ---
 
 ## SensorData.cs
 
-Representa os dados tratados que serão enviados para o modelo de Machine Learning.
+Representa as features utilizadas pelo modelo de tag individual.
 
-Esses dados são chamados de Features.
+Campos:
 
-Essas informações ajudam o modelo a compreender melhor o comportamento da tag.
+* ValorAtual
+* MediaMovel5
+* Variacao
+* MinJanela5
+* MaxJanela5
+* DesvioPadrao5
+
+---
+
+## ProcessoData.cs
+
+Representa as features utilizadas pelo modelo multitag.
+
+Atualmente:
+
+* Temperatura
+
+* TemperaturaMedia5
+
+* TemperaturaVariacao
+
+* Pressao
+
+* PressaoMedia5
+
+* PressaoVariacao
+
+* Corrente
+
+* CorrenteMedia5
+
+* CorrenteVariacao
 
 ---
 
@@ -73,137 +178,123 @@ Essas informações ajudam o modelo a compreender melhor o comportamento da tag.
 
 Representa o resultado retornado pelo modelo.
 
-* EhAnomalia = indica se o comportamento é considerado anômalo
-* Score = nível de confiança da previsão
+Campos:
+
+* EhAnomalia
+* Score
 
 ---
 
-# Pasta Services
-
-Contém as regras de negócio do sistema.
-
----
+# Services
 
 ## CsvFeatureGenerator.cs
 
-Responsável por processar o histórico bruto da tag.
+Responsável por:
 
-Funções principais:
+* Ler sensores.csv
+* Calcular features
+* Gerar sensores_enriquecido.csv
 
-### CarregarHistorico()
+Features calculadas:
 
-Lê o arquivo CSV original.
-
----
-
-### Gerar()
-
-Gera um novo CSV enriquecido contendo informações adicionais calculadas pelo sistema.
-
----
-
-### GerarFeaturesParaNovaLeitura()
-
-Quando uma nova leitura chega ao sistema, calcula automaticamente as Features necessárias para o modelo.
-
-Essas informações não são fornecidas pelo sensor.
-
-São calculadas pelo sistema utilizando o histórico da tag.
+* Média móvel
+* Variação
+* Mínimo da janela
+* Máximo da janela
+* Desvio padrão
 
 ---
 
-### CalcularDesvioPadrao()
+## ProcessoFeatureGenerator.cs
 
-Calcula o desvio padrão da janela utilizada.
+Responsável por:
 
-Essa métrica ajuda a identificar o nível de variação do comportamento da tag.
+* Ler processo.csv
+* Calcular features para múltiplas tags
+* Gerar processo_enriquecido.csv
+
+Features calculadas:
+
+* Média móvel por variável
+* Variação por variável
 
 ---
 
 ## AnomalyDetectionService.cs
 
-Responsável pela parte de Machine Learning.
+Modelo de Machine Learning para análise individual de tags.
+
+Responsável por:
+
+* Treinar o modelo
+* Realizar previsões
+* Identificar anomalias
 
 ---
 
-### Treinar()
+## MultitagAnomalyService.cs
 
-Lê o CSV enriquecido e treina o modelo utilizando ML.NET.
+Modelo de Machine Learning para análise de processo.
 
-Objetivo:
+Responsável por:
 
-Aprender o comportamento normal da tag.
-
----
-
-### PreverNovaLeitura()
-
-Recebe uma nova leitura.
-
-Executa:
-
-1. Busca histórico da tag
-2. Calcula Features
-3. Envia os dados para o modelo
-4. Retorna o resultado da análise
+* Treinar modelo multivariável
+* Avaliar o comportamento conjunto das tags
+* Detectar anomalias de processo
 
 ---
 
-# Pasta Data
+# Fluxo Atual
 
-Contém os arquivos de dados utilizados pelo projeto.
+Ao executar o projeto:
 
----
+1. Gera o CSV enriquecido da tag individual
 
-## sensores.csv
+2. Treina o modelo individual
 
-Arquivo bruto.
+3. Realiza uma previsão
 
-Representa os dados recebidos da tag.
+4. Gera o CSV enriquecido do processo
 
----
+5. Treina o modelo multitag
 
-## sensores_enriquecido.csv
-
-Arquivo gerado automaticamente pelo sistema.
-
-Contém informações adicionais calculadas a partir do histórico.
-
-Esse arquivo é utilizado pelo ML.NET para treinamento.
+6. Realiza uma previsão multitag
 
 ---
 
-# Fluxo Completo da Solução
+# Tecnologias Utilizadas
+
+* C#
+* .NET 10
+* ML.NET
+* CSV
+* Machine Learning
+* Detecção de Anomalias
+
+---
+
+# Evoluções Futuras
+
+* Integração com OPC UA
+* Integração com MQTT
+* Leitura de tags em tempo real
+* Persistência de modelos (.zip)
+* API REST
+* Dashboard de monitoramento
+* Agrupamento automático de tags por comportamento
+* Detecção preditiva de falhas
+* Treinamento incremental dos modelos
+
+---
+
+# Autor
+
+Laura Baptistini
+
+Projeto de estudo para aplicação de Inteligência Artificial em sistemas de automação industrial.
 
 
-Sensor Industrial
-        ↓
-Tag
-        ↓
-Sistema
-        ↓
-CSV Histórico
-        ↓
-CsvFeatureGenerator
-        ↓
-CSV Enriquecido
-        ↓
-ML.NET
-        ↓
-Detecção de Anomalias
-        ↓
-Alerta
 
-# Cenário Futuro
+# INFORMAÇÕES
+como as  tags podem ter comportamentos diferentes pensei em agrupar elas de acordo com o comportamento e fazer um modelo para grupo de tags.
 
-Atualmente os dados são simulados utilizando arquivos CSV.
-
-Em uma aplicação real, as leituras poderão ser obtidas através de:
-
-* OPC UA
-* MQTT
-* Banco de Dados
-* APIs
-* Historiadores Industriais
-
-Mantendo a mesma arquitetura do sistema.

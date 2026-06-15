@@ -39,3 +39,4 @@ C:\Users\Laura Marrari\PSi4IA\EstudoML\obj\Debug\net10.0\refint\EstudoML.dll
 C:\Users\Laura Marrari\PSi4IA\EstudoML\obj\Debug\net10.0\EstudoML.pdb
 C:\Users\Laura Marrari\PSi4IA\EstudoML\obj\Debug\net10.0\EstudoML.genruntimeconfig.cache
 C:\Users\Laura Marrari\PSi4IA\EstudoML\obj\Debug\net10.0\ref\EstudoML.dll
+C:\Users\Laura Marrari\PSi4IA\EstudoML\obj\Debug\net10.0\EstudoML.sourcelink.json

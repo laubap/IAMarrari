@@ -3,7 +3,10 @@ using Microsoft.ML;
 public class AnomalyDetectionService
 {
     private readonly MLContext _mlContext = new();
+
     private PredictionEngine<SensorData, SensorPrediction>? _predictor;
+    private ITransformer? _modelo;
+    private DataViewSchema? _schema;
 
     public void Treinar(string caminhoCsvEnriquecido)
     {
@@ -29,9 +32,34 @@ public class AnomalyDetectionService
 
         var modelo = pipeline.Fit(dataView);
 
+        _modelo = modelo;
+        _schema = dataView.Schema;
+
         _predictor = _mlContext.Model.CreatePredictionEngine<SensorData, SensorPrediction>(modelo);
 
         Console.WriteLine("Modelo treinado com sucesso!");
+    }
+
+    public void SalvarModelo(string caminho)
+    {
+        if (_modelo == null || _schema == null)
+            throw new InvalidOperationException("Modelo ainda não foi treinado.");
+
+        _mlContext.Model.Save(_modelo, _schema, caminho);
+
+        Console.WriteLine($"Modelo salvo em: {caminho}");
+    }
+
+    public void CarregarModelo(string caminhoModelo)
+    {
+        var modelo = _mlContext.Model.Load(caminhoModelo, out var schema);
+
+        _modelo = modelo;
+        _schema = schema;
+
+        _predictor = _mlContext.Model.CreatePredictionEngine<SensorData, SensorPrediction>(modelo);
+
+        Console.WriteLine($"Modelo carregado de: {caminhoModelo}");
     }
 
     public SensorPrediction PreverNovaLeitura(
